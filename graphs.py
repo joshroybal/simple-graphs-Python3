@@ -36,8 +36,10 @@ def print_adjacency_dict(d):
     for k in d:
         print(k + ': ', end='')
         for v in d[k]:
-            print('[' + v + '|-]--> ', end='')
-        print('|/|')
+            print(v, end='')
+            if v != d[k][-1]:
+                print(',', end='')
+        print()
 
 def degree(node, graph):
     d = adjacency_dict(graph)
@@ -82,21 +84,23 @@ def all_non_adjacent(node, t, adjdict):
     return True
 
 def paint(g):
-    colors = ['red','orange','yellow','green','blue','indigo','violet']
+    colors = ['red','orange','yellow','green','blue','indigo','violet','cyan','brown','maroon','lime','steelblue','darkgray','gray','slategray','darkslategray','lightslategray','lightgray','white','black']
     q = color_queue(g)
     d = adjacency_dict(g)
     nodes = g[0]
     color_dict = {}
-    while len(q) > 0:
+    while len(q) > 0 and len(colors) > 0:
         node = q[0]
         t = non_adjacent(node, d)
-        c = choice(colors)
-        colors.remove(c)
+        c = colors.pop(0)
+        atc = []    # assigned this color
         for v in t:
-            if v in q and all_non_adjacent(v, t, d) == True:
+            if v in q and all_non_adjacent(v, atc, d) == True:
                 color_dict[v] = c
+                atc.append(v)
                 q.remove(v)
                 if len(q) == 0: break
+    print('no. of colors assigned:', 20 - len(colors))
     return color_dict
 
 def dot_dump(g):
@@ -115,8 +119,32 @@ def dot_dump(g):
     for key in fillcolors:
         s += key + ' [fillcolor=' + fillcolors[key] + ']\n'
     s += ' }'
-    print(s)
+    # print(s)
     f = open('graph.gv', 'w')
     f.write(s)
     f.close()
     print('graph data dumped to file graph.gv')
+
+def graphstr(g):
+    nodes = g[0]
+    edges = g[1]
+    adjdict = adjacency_dict(g)
+    adjmat = adjacency_matrix(g)
+    maxlen = max([ len(adjdict[key]) for key in adjdict ])
+    maxlen *= 2
+    maxlen += 3
+    fmtstr = '{:' + str(maxlen) + 's}'
+    #print(maxlen)
+    #print(fmtstr)
+    #print(adjdict)
+    #print(adjmat)
+    result = ''
+    for row in zip(adjdict, adjmat):
+        #print(row)
+        key = row[0]
+        #print(key + ': ' + ','.join(adjdict[key]))
+        line = fmtstr.format( key + ': ' + ','.join(adjdict[key]) )
+        line += ' '.join([ str(col) for col in row[1] ])
+        line += '\n'
+        result += line
+    return result.strip()
