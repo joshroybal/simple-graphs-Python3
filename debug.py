@@ -3,18 +3,16 @@
 import sys, subprocess
 from random import randint
 from graphs import random_graph, print_adjacency_dict,\
-print_adjacency_matrix, dot_point, dot_color, graphstr, dotlists, \
-adjlist_str, adjacency_dict
+print_adjacency_matrix, dot_point, dot_color, graphstr, dotlists
 
 def main(n):
     if n > 20:
         print('Graphs with more than 20 nodes not implemented.')
         return
     g = random_graph(n)
-    #print(graphstr(g))
-    print(adjlist_str(adjacency_dict(g)))
-    #print_adjacency_dict(g)
-    #print_adjacency_matrix(g)
+    print(graphstr(g))
+    print_adjacency_dict(g)
+    print_adjacency_matrix(g)
     dot_point(g, 'point.gv')
     dot_color(g, 'color.gv')
     dotlists(g)
