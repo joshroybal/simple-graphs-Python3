@@ -32,7 +32,8 @@ def adjacency_dict(g):
                 d[i].extend([ k for k in j if k is not i ])
     return d
 
-def print_adjacency_dict(d):
+def print_adjacency_dict(g):
+    d = adjacency_dict(g)
     for k in d:
         print(k + ': ', end='')
         for v in d[k]:
@@ -40,6 +41,17 @@ def print_adjacency_dict(d):
             if v != d[k][-1]:
                 print(',', end='')
         print()
+
+def adjlist_str(d):
+    s = ''
+    for k in d:
+        s += k + ': '
+        for v in d[k]:
+            s += v
+            if v != d[k][-1]:
+                s += ','
+        s += '\n'
+    return s
 
 def degree(node, graph):
     d = adjacency_dict(graph)
@@ -65,7 +77,8 @@ def adjacency_matrix(g):
         t[j][i] = 1
     return t
 
-def print_adjacency_matrix(m):
+def print_adjacency_matrix(g):
+    m = adjacency_matrix(g)
     for row in m:
         for col in row:
             print(col, end=' ')
@@ -83,8 +96,12 @@ def all_non_adjacent(node, t, adjdict):
             return False
     return True
 
-def paint(g):
-    colors = ['red','orange','yellow','green','blue','indigo','violet','cyan','brown','maroon','lime','steelblue','darkgray','gray','slategray','darkslategray','lightslategray','lightgray','white','black']
+def colornodes(g):
+    colors = ['red','orange','yellow','green','blue','indigo',\
+    'violet','brown','coral','cyan','maroon','gold','silver',\
+    'powderblue','midnightblue','steelblue','slateblue','slategray',\
+    'gray','white']
+    c0 = len(colors)
     q = color_queue(g)
     d = adjacency_dict(g)
     nodes = g[0]
@@ -100,30 +117,72 @@ def paint(g):
                 atc.append(v)
                 q.remove(v)
                 if len(q) == 0: break
-    print('no. of colors assigned:', 20 - len(colors))
+    print('no. of colors assigned:', c0 - len(colors))
     return color_dict
 
-def dot_dump(g):
+def dot_point(g, filename):
     nodes = g[0]
     edges = g[1]
-    idx = 0
-    for node in nodes:
-        idx = (idx + 1) % 7
-    s = 'graph { layout=circo; node [ shape=circle margin=0 height=0 width=0 style=filled ]'
-    idx = 0
+    s = 'graph { node [ shape=point ]'
     for edge in edges:
-        idx = (idx + 1) % 7
         s += ' ' + str(edge[0]) + ' -- ' + str(edge[1]) + ' '
     s += '\n'
-    fillcolors = paint(g)
-    for key in fillcolors:
-        s += key + ' [fillcolor=' + fillcolors[key] + ']\n'
     s += ' }'
-    # print(s)
-    f = open('graph.gv', 'w')
-    f.write(s)
-    f.close()
-    print('graph data dumped to file graph.gv')
+    outfile = open(filename, 'w')
+    outfile.write(s)
+    outfile.close()
+    print('graphviz dot data written to file', filename)
+
+def dot_color(g, filename):
+    nodes = g[0]
+    edges = g[1]
+    nodecolors = colornodes(g)
+    s = 'graph {\n'
+    s += 'layout=circo; ratio=0.618; pad=1.0;\n'
+    #s += 'layout=circo;\n'
+    s += 'node [shape=circle margin=0 height=0 width=0 style=filled]\n'
+    for edge in edges:
+        s += ' ' + str(edge[0]) + ' -- ' + str(edge[1]) + ' '
+    s += '\n'
+    for key in nodecolors:
+        s += key + ' [fillcolor=' + nodecolors[key] + ']\n'
+    s += ' }'
+    outfile = open(filename, 'w')
+    outfile.write(s)
+    outfile.close()
+    print('graphviz dot data written to file', filename)
+
+def dotlists(g):
+    d = adjacency_dict(g)
+    nodecolors = colornodes(g)
+    for k in d:
+        filename = 'list' + str(k) + '.gv'
+        print(filename)
+        dotlist(d[k], filename, k, nodecolors)
+
+def dotlist(lis, filename, title, colors):
+    for node in colors:
+        print(node, colors[node])
+    dotstr = 'digraph {\n'
+    dotstr += 'rankdir = LR;\n'
+    dotstr += 'node [shape=record style=filled];\n'
+    dotstr += 'edge [tailclip=false];\n'
+    dotstr += title + ' [ shape=box color=' + colors[title]  + ' ]\n';
+    for e in lis:
+        dotstr += e + ' [label="{ <data> ' + e + ' | <ref> }"];\n'
+    dotstr += title + ':e -> '+ lis[0] + '\n'
+    #for idx, ele in enumerate(lis[:-1]):
+    #    dotstr += ele + ':ref:c -> ' + lis[idx+1] + ':data [arrowhead=vee, arrowtail=dot, dir=both];\n'
+    for i in range(len(lis) - 1):
+        dotstr += lis[i] + ':ref:c -> ' + lis[i+1] + ':data [arrowhead=vee, arrowtail=dot, dir=both];\n'
+    for node in lis:
+        dotstr += node + ' [fillcolor=' + colors[node] + ']\n'
+    dotstr += '}'
+    print(dotstr)
+    outfile = open(filename, 'w')
+    outfile.write(dotstr)
+    outfile.close()
+
 
 def graphstr(g):
     nodes = g[0]
@@ -134,15 +193,9 @@ def graphstr(g):
     maxlen *= 2
     maxlen += 3
     fmtstr = '{:' + str(maxlen) + 's}'
-    #print(maxlen)
-    #print(fmtstr)
-    #print(adjdict)
-    #print(adjmat)
     result = ''
     for row in zip(adjdict, adjmat):
-        #print(row)
         key = row[0]
-        #print(key + ': ' + ','.join(adjdict[key]))
         line = fmtstr.format( key + ': ' + ','.join(adjdict[key]) )
         line += ' '.join([ str(col) for col in row[1] ])
         line += '\n'
