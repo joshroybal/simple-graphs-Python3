@@ -42,7 +42,8 @@ def print_adjacency_dict(g):
                 print(',', end='')
         print()
 
-def adjlist_str(d):
+def adjlist_str(g):
+    d = adjacency_dict(g)
     s = ''
     for k in d:
         s += k + ': '
@@ -117,7 +118,7 @@ def colornodes(g):
                 atc.append(v)
                 q.remove(v)
                 if len(q) == 0: break
-    print('no. of colors assigned:', c0 - len(colors))
+    #print('no. of colors assigned:', c0 - len(colors))
     return color_dict
 
 def dot_point(g, filename):
@@ -131,7 +132,7 @@ def dot_point(g, filename):
     outfile = open(filename, 'w')
     outfile.write(s)
     outfile.close()
-    print('graphviz dot data written to file', filename)
+    #print('graphviz dot data written to file', filename)
 
 def dot_color(g, filename):
     nodes = g[0]
@@ -150,19 +151,16 @@ def dot_color(g, filename):
     outfile = open(filename, 'w')
     outfile.write(s)
     outfile.close()
-    print('graphviz dot data written to file', filename)
+    #print('graphviz dot data written to file', filename)
 
 def dotlists(g):
     d = adjacency_dict(g)
     nodecolors = colornodes(g)
     for k in d:
         filename = 'list' + str(k) + '.gv'
-        print(filename)
         dotlist(d[k], filename, k, nodecolors)
 
 def dotlist(lis, filename, title, colors):
-    for node in colors:
-        print(node, colors[node])
     dotstr = 'digraph {\n'
     dotstr += 'rankdir = LR;\n'
     dotstr += 'node [shape=record style=filled];\n'
@@ -178,26 +176,13 @@ def dotlist(lis, filename, title, colors):
     for node in lis:
         dotstr += node + ' [fillcolor=' + colors[node] + ']\n'
     dotstr += '}'
-    print(dotstr)
     outfile = open(filename, 'w')
     outfile.write(dotstr)
     outfile.close()
 
-
 def graphstr(g):
     nodes = g[0]
     edges = g[1]
-    adjdict = adjacency_dict(g)
-    adjmat = adjacency_matrix(g)
-    maxlen = max([ len(adjdict[key]) for key in adjdict ])
-    maxlen *= 2
-    maxlen += 3
-    fmtstr = '{:' + str(maxlen) + 's}'
-    result = ''
-    for row in zip(adjdict, adjmat):
-        key = row[0]
-        line = fmtstr.format( key + ': ' + ','.join(adjdict[key]) )
-        line += ' '.join([ str(col) for col in row[1] ])
-        line += '\n'
-        result += line
-    return result.strip()
+    nodestr = '{' + ','.join([v for v in nodes]) + '}\n'
+    edgestr='{'+','.join(['{'+','.join([v for v in e])+'}' for e in edges])+'}'
+    return nodestr + edgestr
