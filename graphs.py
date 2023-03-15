@@ -68,6 +68,10 @@ def complete_graph(n):
 
 def regular_edges(nodes):
     n = len(nodes)
+    #t = [ (nodes[0], nodes[1]), (nodes[0], nodes[-1]) ]
+    #for i in range(1, n - 1):
+    #    t.append((nodes[i], nodes[i+1]))
+    #return t
     return sorted( [ tuple(sorted( [ nodes[i],nodes[(i+1)%n ] ] ) ) for i in range(n) ] )
 
 def regular_graph(n):
@@ -119,12 +123,14 @@ def non_adjacent(v, d):
 
 def all_non_adjacent(node, t, adjdict):
     for v in t:
-        if node in adjdict[v]:
+        if v in adjdict[node]:
             return False
     return True
 
 def colornodes(g):
-    colors = ['red','orange','yellow','green','blue','indigo','violet']
+    colors = ['red','orange','yellow','green','blue','indigo','violet',\
+    'powderblue','steelblue','slateblue','slategray','gray','forestgreen',\
+    'brown','olive','cyan']
     c0 = len(colors)
     d = g.adjacency_dict()
     q = descending_order(g.degree_dict())
@@ -133,13 +139,15 @@ def colornodes(g):
         node = q[0]
         t = non_adjacent(node, d)
         c = colors.pop(0)
-        atc = []    # assigned this color
-        for v in t:
-            if v in q and all_non_adjacent(v, atc, d) == True:
+        atc = [ ]    # assigned this color
+        for v in q:
+            if v in t and all_non_adjacent(v, atc, d) == True:
                 color_dict[v] = c
                 atc.append(v)
-                q.remove(v)
+                #q.remove(v)
                 if len(q) == 0: break
+        for v in atc:
+            q.remove(v)
     if len(q) > 0:
         raise ValueError("not enough colors")
     print('no. of colors assigned:', c0 - len(colors))
