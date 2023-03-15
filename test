@@ -1,0 +1,3 @@
+#!/bin/sh
+set -v
+./driver && geeqie color.svg

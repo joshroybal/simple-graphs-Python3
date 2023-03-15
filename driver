@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+
+import sys
+from graphs import sparse_graph, print_adjacency_dict, print_adjacency_matrix,\
+dot_point, colornodes, dot_color, dotlists
+
+def main():
+    g = sparse_graph()
+    colors = colornodes(g)
+    print(g)
+    if g.density() <= .5:
+        print_adjacency_dict(g)
+    if g.density() >= .5:
+        print_adjacency_matrix(g)
+    print('size = {:d}, order = {:d}, density = {:f}'.format(g.size(), g.order(), g.density()))
+    dot_color(g, colors, 'color.svg')
+    dotlists(g, colors)
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as error:
+        sys.stderr.write('%s\n' % error)
+        sys.exit(1)
