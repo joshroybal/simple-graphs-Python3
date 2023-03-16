@@ -4,11 +4,13 @@ from randnorm import randint_normal, randint_lognormal
 
 labels = [ chr(i) for i in range(ord('a'), ord('a') + 26) ]
 
-# class Edge:
-    # def __init__(self, v1, v2):
-        # self.v1, self.v2 = v1, v2
-    # def __str__(self):
-        # return '{' + self.v1 + ',' + self.v2 + '}'
+class Edge:
+    def __init__(self, v1, v2):
+        self.v1, self.v2 = v1, v2
+    def __init__(self, t):  # init with tuple
+        self.v1, self.v2 = t
+    def __str__(self):
+        return '{' + self.v1 + ',' + self.v2 + '}'
 
 class Graph:
     def __init__(self, nodes=[], edges=[]):
@@ -61,6 +63,9 @@ def idxltr(i):
 
 def complete_edges(v):
     n = len(v)
+    #t = [ Edge(map(idxltr, (i,j))) for i in range(n) for j in range(i+1,n) ]
+    #for e in t:
+    #    print(e)
     return [ tuple(map(idxltr, (i,j))) for i in range(n) for j in range(i+1,n) ]
 
 def complete_graph(n):
@@ -68,10 +73,6 @@ def complete_graph(n):
 
 def regular_edges(nodes):
     n = len(nodes)
-    #t = [ (nodes[0], nodes[1]), (nodes[0], nodes[-1]) ]
-    #for i in range(1, n - 1):
-    #    t.append((nodes[i], nodes[i+1]))
-    #return t
     return sorted( [ tuple(sorted( [ nodes[i],nodes[(i+1)%n ] ] ) ) for i in range(n) ] )
 
 def regular_graph(n):
@@ -118,43 +119,40 @@ def print_adjacency_matrix(g):
             print(col, end=' ')
         print()
 
-def non_adjacent(v, d):
-    return list(set([ key for key in d ]) - set(d[v]))
-
-def all_non_adjacent(node, t, adjdict):
-    for v in t:
-        if v in adjdict[node]:
-            return False
-    return True
-
+# Welsh-Powell vertex coloring algorithm.
 def colornodes(g):
-    colors = ['red','orange','yellow','green','blue','indigo','violet',\
-    'powderblue','steelblue','slateblue','slategray','gray','forestgreen',\
-    'brown','olive','cyan']
+    colors = ['red','orange','yellow','green','blue','indigo','violet']
     c0 = len(colors)
     d = g.adjacency_dict()
     q = descending_order(g.degree_dict())
     color_dict = {}
     while len(q) > 0 and len(colors) > 0:
+        #print('nodes ordered by degree')
+        #print(q)
         node = q[0]
-        t = non_adjacent(node, d)
+        t = [ v for v in q if v not in d[node] ]
+        #print('nodes not adjacent to', node)
+        #print(t)
         c = colors.pop(0)
-        atc = [ ]    # assigned this color
-        for v in q:
-            if v in t and all_non_adjacent(v, atc, d) == True:
-                color_dict[v] = c
-                atc.append(v)
-                #q.remove(v)
-                if len(q) == 0: break
-        for v in atc:
+        atc = []    # assigned this color
+        for v in t:
+            if any( [ v in d[x] for x in atc ] ):
+                continue
+            color_dict[v] = c
+            atc.append(v)
             q.remove(v)
+            if len(q) == 0:
+                break
+        #print('nodes assigned color', c, atc)
+        #print()
     if len(q) > 0:
         raise ValueError("not enough colors")
-    print('no. of colors assigned:', c0 - len(colors))
+    #print('no. of colors assigned:', c0 - len(colors))
     return color_dict
 
 def dot_point(g, filename):
     dot = graphviz.Graph(os.path.basename(filename))
+    dot.attr('graph',label='size = {:d}, order = {:d}, density = {:f}'.format(g.size(), g.order(), g.density()))
     dot.attr('node', shape='point')
     for node in g.nodes:
         dot.node(node)
@@ -164,9 +162,11 @@ def dot_point(g, filename):
     print(output)
 
 def dot_color(g, colors, filename):
+    nc = len({v for k, v in colors.items()})
     dot = graphviz.Graph(os.path.basename(filename))
     # dot.attr(ratio='0.618')
     # dot.attr(pad='1')
+    dot.attr('graph',label='colors = {:d}, size = {:d}, order = {:d}, density = {:f}'.format(nc, g.size(), g.order(), g.density()))
     dot.attr('node', shape='circle',style='filled',height='0',width='0',margin='0')
     for node in colors:
         dot.node(node,fillcolor=colors[node])
@@ -174,35 +174,3 @@ def dot_color(g, colors, filename):
         dot.edge(edge[0], edge[1])
     output = dot.render(outfile=filename,engine='circo',cleanup=True)
     print(output)
-
-def dotlists(g, colors):
-    d = g.adjacency_dict()
-    for k in d:
-        filename = 'list' + str(k)
-        dotlist(d[k], filename, k, colors)
-    subprocess.run('convert list*.png -append adjlist.png', shell=True)
-    subprocess.run('rm list*.png', shell=True)
-
-def dotlist(t, filename, title, colors):
-    dot = graphviz.Digraph(filename)
-    dot.attr(rankdir='LR')
-    dot.attr('node',shape='record',style='filled')
-    dot.attr('edge',tailclip='false')
-
-    for node in t:
-        dot.node(node,fillcolor=colors[node])
-        string = '{<data>'+node+'|<ref>}'
-        dot.node(node,label=string)
-
-    dot.attr('node',shape='box',fillcolor=colors[title])
-    if len(t) > 0:
-        dot.edge(title + ':e', t[0])
-        for idx, ele in enumerate(t[:-1]):
-            v1 = t[idx] + ':ref:c'
-            v2 = t[idx+1]
-            dot.edge(v1,v2,arrowtail='dot',dir='both')
-    else:
-        dot.node(title,tailclip='true',arrowhead='vee',arrowtail='dot',dir='both')
-
-    filename = os.path.basename(filename) + '.png'
-    dot.render(cleanup=True,outfile=filename)
