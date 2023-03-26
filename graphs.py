@@ -1,6 +1,8 @@
 import os, subprocess, graphviz
+from math import log
 from random import randint, sample
 from collections import namedtuple
+from randnorm import randint_normal
 
 letters = [ chr(i) for i in range(97,123) ]
 
@@ -20,23 +22,23 @@ class Graph:
             self.adjlis[e.y].add(e.x)
 
     def nodes(self):
+        """Method returns graph's node list."""
         return [ v for v in self.adjlis ]
 
-    # There has got to be a better way.
     def edges(self):
-        edgeset = set()
-        for x in self.adjlis:
-            for y in self.adjlis[x]:
-                edgeset.add(Edge(*sorted([x, y])))
-        return edgeset
+        """Method returns graph's edge set."""
+        return { Edge(*sorted((x,y))) for x in self.adjlis for y in self.adjlis[x] }
 
     def size(self):
+        """Method returns no. of edges in graph."""
         return sum( [ len(x) for x in self.adjlis.values() ] ) // 2
 
     def order(self):
+        """Method returns no. of vertices in graph."""
         return len(self.adjlis)
 
     def density(self):
+        """Method returns graph's density quotient."""
         m = self.size()
         n = self.order()
         return 2 * m / (n * (n - 1))
@@ -57,19 +59,19 @@ class Graph:
         """Lists all vertices y such that there is not an edge from the vertex x to the vertex y."""
         return set(self.nodes()).difference(self.adjlis[x])
 
-    def addnode(self, x):
+    def add_vertex(self, x):
         """Adds the vertex x, if it is not there."""
         if x not in self.adjlis:
             self.adjlis[x] = set()
 
-    def removenode(self, x):
+    def remove_vertex(self, x):
         """Remove the vertex x, if it is there."""
         self.adjlis.pop(x)
         for node in self.adjlis:
             if x in self.adjlis[node]:
                 self.adjlis[node].remove(x)
 
-    def addedge(self, x, y):
+    def add_edge(self, x, y):
         """Adds the edge from the vertex x to the vertex y if it is not there."""
         if self.antiedge(x, y):
             self.adjlis[x].add(y)
@@ -82,15 +84,18 @@ class Graph:
             self.adjlis[y].remove(x)
 
     def degree(self, x):
+        """Method returns no. of other vertices adjacent to the vertex x."""
         return len(self.adjlis[x])
 
     def degrees(self):
-        d = {}
-        for v in self.adjlis:
-            d[v] = self.degree(v)
-        return d
+        """Method returns dictionary of the degrees of every vertex in the graph."""
+        return dict( [ (k,self.degree(k)) for k in self.adjlis ] )
 
     def adjmat(self):
+        """
+        Method returns adjaceny matrix of graph.
+        Vertices and edges can be integers or strings.
+        """
         n = self.order()
         t = [ [ 0 ] * n for i in range(n) ]
         for edge in self.edges():
@@ -105,12 +110,15 @@ class Graph:
     def printnodes(self):
         print('{' + ','.join(self.nodes()) + '}')
 
+    def printedge(self, e):
+        print('{' + ','.join(e) + '}')
+
     def printedges(self):
         print('{'+','.join(['{'+','.join(e)+'}' for e in sorted(self.edges())])+'}')
 
     def printadjlis(self):
         for v in self.adjlis:
-            print(str(v) + ': ' + ','.join(map(str, self.adjlis[v])))
+            print(str(v) + ': ' + ','.join(map(str, sorted(self.adjlis[v]))))
 
     def printadjmat(self):
         print('\n'.join(' '.join(str(j) for j in i) for i in self.adjmat()))
@@ -124,31 +132,45 @@ def complete_nodes(n):
     return letters[:n]
 
 def complete_edges(v):
+    """Function returns complete edges of givern vertices v."""
     return [ Edge(x,y) for x in v[:-1] for y in v[v.index(x) + 1:] ]
 
 def complete_graph(n):
+    """Function returns the complete graph of order n."""
     v = complete_nodes(n)
     e = complete_edges(v)
     return Graph(v, e)
 
-def random_graph(n=randint(2, 26)):
+def randgraph(n=randint(2, 26)):
+    """Function returns pseudo-uniformly distributed graph."""
     maxm = (n * (n - 1)) // 2
     m = randint(1, maxm)
     v = letters[:n]
     e = sample(complete_edges(v), m)
     return Graph(v, e)
 
+def sparsegraph(n=randint_normal(4,26)):
+    """Function returns pseudo-normally distributed sparse graph."""
+    maxm = round((n * (n - 1)) / 4 - 1)
+    hi = round(n * log(n, 2))
+    m = randint_normal(1, min(hi, maxm))
+    v = letters[:n]
+    e = sample(complete_edges(v), m)
+    return Graph(v, e)
+
 def dotpoint(g, filename):
+    """Function creates line and point image file of graph g."""
     dot = graphviz.Graph(os.path.basename(filename))
     dot.attr('node', shape='point')
-    for node in g.nodes():
-        dot.node(node)
+    #for node in g.nodes():
+    #    dot.node(node)
     for edge in g.edges():
         dot.edge(edge.x, edge.y)
     output = dot.render(outfile=filename,engine='circo',cleanup=False)
     print(output)
 
 def dotcolor(g, colors, filename):
+    """Function creates image file of Welsh-Powell colored graph."""
     c = len( { v for v in colors.values() } )
     m = g.size()
     n = g.order()
@@ -166,12 +188,12 @@ def dotcolor(g, colors, filename):
     output = dot.render(outfile=filename,engine='circo',cleanup=True)
     print(output)
 
-
-def descending_order(d):
-    return [ k for k,v in sorted(d.items(), key = lambda x: x[1], reverse=True) ]
+#def descending_order(d):
+#    return [ k for k,v in sorted(d.items(), key = lambda x: x[1], reverse=True) ]
 
 # Welsh-Powell vertex coloring algorithm.
 def welsh_powell(g):
+    """Welsh-Powell graph vertex coloring algorithm."""
     colors = ['red','orange','yellow','green','blue','indigo','violet']
     d = g.adjlis
     # q = descending_order(g.degrees())
